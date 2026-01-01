@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voice & Text Transmitter</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>🎵 Voice & Text Transmitter</h1>
+      <p>Transmit data through sound waves</p>
+    </header>
+
+    <main>
+      <!-- Mode Selection -->
+      <div class="mode-selector">
+        <button id="text-mode-btn" class="mode-btn active">📝 Text Mode</button>
+        <button id="voice-mode-btn" class="mode-btn">🎤 Voice Mode</button>
+      </div>
+
+      <!-- Text Mode -->
+      <div id="text-mode" class="mode-panel active">
+        <div class="input-section">
+          <h2>Text Input</h2>
+          <textarea id="text-input" placeholder="Type your message here..." rows="4"></textarea>
+          <button id="transmit-text-btn" class="primary-btn">📡 Transmit Text</button>
+        </div>
+      </div>
+
+      <!-- Voice Mode -->
+      <div id="voice-mode" class="mode-panel">
+        <div class="input-section">
+          <h2>Voice Input</h2>
+          <div class="voice-controls">
+            <button id="record-btn" class="record-btn">🎤 Record Voice (2s)</button>
+            <div id="recording-status" class="status-text"></div>
+          </div>
+          <button id="transmit-voice-btn" class="primary-btn" disabled>📡 Transmit Voice</button>
+        </div>
+      </div>
+
+      <!-- Frequency Visualization -->
+      <div class="visualization-section">
+        <h2>Frequency Analysis</h2>
+        <canvas id="frequency-canvas" width="800" height="200"></canvas>
+        <div id="transmission-status" class="status-text"></div>
+      </div>
+
+      <!-- Receiver Section -->
+      <div class="receiver-section">
+        <h2>Receiver</h2>
+        <button id="listen-btn" class="secondary-btn">👂 Start Listening</button>
+        <button id="stop-listen-btn" class="secondary-btn" disabled>⏹ Stop Listening</button>
+        
+        <div class="received-data">
+          <h3>Received Messages</h3>
+          <div id="received-text" class="received-box">
+            <p class="placeholder">No messages received yet...</p>
+          </div>
+          
+          <div id="received-voice" class="received-box" style="display: none;">
+            <button id="play-voice-btn" class="secondary-btn" disabled>🔊 Play Received Voice</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <p>Built with Web Audio API | <a href="https://github.com/brokenspagheti/voice-chirp-transmitter" target="_blank">View Code</a></p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

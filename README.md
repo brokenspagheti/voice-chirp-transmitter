@@ -1,209 +1,231 @@
 # 🎵 Voice & Text Transmitter
 
-Transmit both text and voice through sound waves in a single unified interface!
+Transmit text and **EXACT voice audio** through sound waves!
 
 ## 🚀 Live Demo
 
 **[Try it here!](https://brokenspagheti.github.io/voice-chirp-transmitter/)**
 
-## ✨ Features
+## ✨ Key Features
 
 ### 📡 Transmitter
-- **📝 Text Input**: Type messages and transmit as audio frequencies
-- **🎤 Voice Input**: Record 2-second voice clips and transmit audio samples
-- **📊 Real-time Visualization**: See frequency spectrum during transmission
-- **Progress Tracking**: Monitor transmission progress in real-time
+- **📝 Text Mode**: Encode text as audio frequencies (like CHIRP)
+- **🎤 Voice Mode**: Play your EXACT recorded audio through speakers
+- **📊 Real-time Visualization**: See waveforms during transmission
+- **Progress Tracking**: Monitor transmission status
 
 ### 👂 Receiver
-- **Unified Listening**: Single receiver for both text and voice
-- **📝 Text Display**: Decoded text messages shown in real-time
-- **🔊 Voice Playback**: Play received voice messages with one click
-- **Smart Detection**: Automatically distinguishes between text and voice data
+- **📝 Text Decoding**: Decode frequency-encoded text messages
+- **🎤 Voice Recording**: Capture the EXACT audio played through speakers
+- **🔊 Perfect Playback**: Play back the exact voice you recorded
+- **Smart Detection**: Automatically detects text vs voice transmissions
 
-### 🎨 Interface
-- **Combined Layout**: Text and voice inputs side-by-side
-- **Modern Dark Theme**: Gradient accents and smooth animations
-- **Responsive Design**: Works on desktop and mobile
-- **Clear Status Updates**: Real-time feedback for all operations
+### 🎯 How It Works
 
-## 🛠️ How It Works
+**Text Transmission:**
+1. Text → Frequency encoding (each character = unique frequency)
+2. Play tones through speakers
+3. Receiver decodes frequencies back to text
 
-### Text Transmission
-1. Each character is mapped to a unique frequency (1000 Hz + char code × 50 Hz)
-2. Text is converted to a sequence of audio tones
-3. Start signature → character tones → end signature
-4. Receiver detects frequencies and decodes back to text
-
-### Voice Transmission
-1. Record 2 seconds of voice audio via microphone
-2. Downsample to 8kHz for efficient transmission
-3. Convert audio samples to frequencies (1000-6000 Hz range)
-4. Voice marker → audio sample tones → end signature
-5. Receiver collects samples and reconstructs audio for playback
-
-### Smart Reception
-- Detects voice marker (4000-5000 Hz) to switch modes
-- Text mode: Decodes character frequencies
-- Voice mode: Collects audio samples
-- Both can be received in the same listening session
+**Voice Transmission (EXACT AUDIO):**
+1. Record 2 seconds of voice
+2. Play voice marker (4000-5000 Hz)
+3. **Play the EXACT recorded audio through speakers**
+4. Play end signature
+5. Receiver records everything it hears
+6. Playback the EXACT audio captured
 
 ## 🎯 Usage Guide
 
 ### Transmit Text
-1. Type your message in the "Text Message" box
+1. Type your message
 2. Click "📡 Transmit Text"
-3. Watch the frequency visualization
-4. Wait for "✅ Text transmission complete!"
+3. Text encoded as frequencies and played
 
-### Transmit Voice
+### Transmit Voice (EXACT)
 1. Click "🎤 Record Voice (2s)"
-2. Speak into your microphone for 2 seconds
-3. Wait for "✅ Recording complete!"
-4. Click "📡 Transmit Voice"
-5. Watch transmission progress
+2. Speak into microphone
+3. Click "📡 Transmit Voice"
+4. **Your EXACT voice plays through speakers!**
 
 ### Receive Messages
 1. Click "👂 Start Listening"
-2. Play a transmission (from another device/tab)
-3. Watch as text appears or voice samples are collected
-4. Click "⏹ Stop Listening" when done
-5. For voice: Click "▶ Play Voice" to hear the message
+2. Receiver captures ALL audio (text frequencies + voice audio)
+3. Click "⏹ Stop Listening"
+4. **Text**: Decoded and displayed
+5. **Voice**: Click "▶ Play Voice" to hear EXACT audio
 
 ## 🔧 Technical Details
 
-**Technologies:**
-- Web Audio API (frequency generation & analysis)
-- MediaRecorder API (voice recording)
-- Canvas API (frequency visualization)
-- Vanilla JavaScript (no frameworks!)
+### Text Transmission
+- Frequency encoding: 1000 Hz + (char code × 50 Hz)
+- Each character = 50ms tone
+- Decoded via FFT analysis
 
-**Frequency Encoding:**
-- Text: 1000 Hz base + (char code × 50 Hz)
-- Voice: 1000 Hz base + (sample value × 20 Hz)
-- Start signature: 2000, 2500, 3000 Hz
-- Voice marker: 4000, 4500, 5000 Hz
-- End signature: 3000, 2500, 2000 Hz
+### Voice Transmission (NEW!)
+- **No encoding/compression** - plays EXACT audio
+- Voice marker: 4000-5000 Hz (signals voice mode)
+- Plays recorded audio directly through speakers
+- Receiver records everything via MediaRecorder API
+- Perfect audio quality (limited only by microphone/speakers)
 
-**Audio Processing:**
-- Voice downsampling: 8 kHz sample rate
-- Tone duration: 50ms (text), 20ms (voice)
-- Transmission speed: ~20 chars/sec, ~50 samples/sec
-
-## 🚀 Quick Start
-
-### Run Locally
-```bash
-# Clone the repository
-git clone https://github.com/brokenspagheti/voice-chirp-transmitter.git
-
-# Navigate to directory
-cd voice-chirp-transmitter
-
-# Open in browser
-open index.html
-
-# Or use a local server:
-python -m http.server 8000
-# Visit: http://localhost:8000
-```
-
-### Test It Out
-```bash
-# Option 1: Two browser tabs
-# Tab 1: Transmit a message
-# Tab 2: Start listening, receive the message
-
-# Option 2: Two devices
-# Device 1: Transmit (speakers on)
-# Device 2: Listen (microphone on)
-
-# Best results: Use headphones to avoid feedback!
-```
-
-## 📝 Important Notes
-
-- **Microphone Permission Required**: For recording and receiving
-- **Quiet Environment**: Best results in low-noise settings
-- **Headphones Recommended**: Prevents feedback loops
-- **Voice Quality**: Transmitted voice is low quality (8kHz, demo mode)
-- **Browser Support**: Chrome, Firefox, Safari (modern versions)
+### Why This Works
+- **Transmitter**: Plays audio through speakers
+- **Receiver**: Records audio through microphone
+- **Result**: Exact audio transmission (like playing music to another device)
 
 ## 🎓 Perfect for Hackathons
 
-This project is ideal for 16-hour hackathons:
-- ✅ **Impressive Demo**: Visual + audio transmission
-- ✅ **Unique Concept**: Data through sound waves
-- ✅ **Works Immediately**: No complex setup
-- ✅ **Easy to Extend**: Add features quickly
-- ✅ **No Dependencies**: Pure vanilla JavaScript
-- ✅ **Mobile Friendly**: Responsive design
+**Demo Flow:**
+1. **Text**: "Hello!" → Transmit → Receive → Show decoded text
+2. **Voice**: Record "This is amazing!" → Transmit → Receive → Play EXACT audio
+3. **Wow Factor**: "We transmitted voice through speakers with perfect quality!"
 
-## 🎯 Hackathon Demo Script
+## 📝 Important Notes
 
-**Opening (30 sec):**
-"We built a system that transmits both text and voice through sound waves - like a modem, but for any audio message!"
+### Advantages
+✅ **Perfect Audio Quality** - No compression, no encoding
+✅ **Simple & Reliable** - Just plays and records audio
+✅ **Easy to Understand** - Like playing music to another device
+✅ **Works Immediately** - No complex signal processing
 
-**Demo (2 min):**
-1. Type "Hello Hackathon!" → Transmit → Show visualization
-2. Record voice "This is amazing!" → Transmit → Show progress
-3. Switch to receiver → Decode text → Play voice
-4. "Both text and voice transmitted through speakers!"
+### Limitations
+⚠️ **Requires Quiet Environment** - Background noise will be recorded
+⚠️ **Feedback Risk** - Use headphones or separate devices
+⚠️ **Not Encrypted** - Anyone can record the audio
+⚠️ **Distance Limited** - Depends on speaker/microphone quality
 
-**Technical (1 min):**
-"Uses Web Audio API for frequency modulation. Text encoded as character frequencies, voice downsampled to 8kHz and transmitted as audio samples. Real-time visualization shows transmission."
+### Best Practices
+- Use headphones to avoid feedback
+- Test with two devices (not same device)
+- Quiet room for best results
+- Adjust speaker volume for optimal transmission
 
-**Impact (30 sec):**
-"Potential uses: Offline communication, accessibility tools, educational demos, IoT data transfer without WiFi/Bluetooth."
+## 🚀 Quick Start
 
-## 🔮 Future Enhancements
+### Test Setup
+```bash
+# Option 1: Two Devices
+Device 1: Transmit (speakers on, volume ~70%)
+Device 2: Receive (microphone on, close to Device 1)
 
-- [ ] Audio compression (Opus codec)
-- [ ] Error correction codes (Reed-Solomon)
-- [ ] Multi-channel transmission (parallel frequencies)
-- [ ] Real-time streaming (not just 2-second clips)
-- [ ] Noise filtering and adaptive equalization
-- [ ] Mobile app version (React Native)
-- [ ] File transfer support
-- [ ] Encryption for secure transmission
+# Option 2: Two Browser Tabs (with headphones)
+Tab 1: Transmit voice
+Tab 2: Listen with headphones on
+```
 
-## 🐛 Known Limitations
+### Demo Script
+```
+1. Open site on Device 1
+2. Record: "Hello from the hackathon!"
+3. Click Transmit Voice
+4. Open site on Device 2 (near Device 1)
+5. Click Start Listening
+6. Wait for transmission to complete
+7. Click Stop Listening
+8. Click Play Voice
+9. Hear EXACT audio: "Hello from the hackathon!"
+```
 
-- Voice transmission is demo mode (first 200 samples only)
-- Low audio quality due to downsampling
-- Sensitive to background noise
-- Not suitable for real-time conversation
-- Requires quiet environment for best results
-- Transmission slower than modern wireless
+## 🔮 How It Actually Works
+
+### Transmission
+```javascript
+// Record voice
+MediaRecorder → Blob
+
+// Transmit
+Play voice marker (4000 Hz) → 
+Play EXACT audio blob through speakers →
+Play end signature (3000 Hz)
+```
+
+### Reception
+```javascript
+// Receive
+MediaRecorder captures ALL audio from microphone →
+Stores as Blob
+
+// Playback
+Audio element plays the exact Blob
+```
+
+### Why It's Clever
+- **Text**: Uses frequency encoding (complex but cool)
+- **Voice**: Uses direct audio playback (simple but effective)
+- **Combined**: Best of both worlds!
+
+## 🎯 Hackathon Pitch
+
+**"We built a dual-mode audio transmission system:**
+- **Text Mode**: Encodes messages as frequencies (like modems)
+- **Voice Mode**: Transmits exact audio through speakers
+- **Result**: Send both text and voice without WiFi/Bluetooth!"
+
+**Technical Highlights:**
+- Web Audio API for frequency generation
+- MediaRecorder API for audio capture
+- FFT analysis for text decoding
+- Direct audio playback for voice
+
+**Use Cases:**
+- Offline communication
+- Educational demos
+- Accessibility tools
+- IoT data transfer
+- Emergency communication
+
+## 🐛 Troubleshooting
+
+**No audio received?**
+- Check microphone permissions
+- Increase speaker volume
+- Reduce distance between devices
+- Use quieter environment
+
+**Feedback/echo?**
+- Use headphones
+- Use separate devices
+- Reduce speaker volume
+
+**Poor quality?**
+- Check microphone quality
+- Reduce background noise
+- Adjust speaker volume
+- Move devices closer
 
 ## 🤝 Contributing
 
-Pull requests welcome! Areas to improve:
-- Better noise filtering
-- Improved voice quality
-- Error correction
-- UI/UX enhancements
-- Mobile optimization
-- Documentation
+Ideas to improve:
+- Add noise cancellation
+- Implement echo cancellation
+- Add volume level indicators
+- Support longer recordings
+- Add file transfer mode
 
 ## 📄 License
 
-MIT License - free to use for hackathons and learning!
+MIT License - free for hackathons and learning!
 
 ## 🙏 Credits
 
-Inspired by:
-- [CHIRP](https://chirp.hex.dance/) - Original text-to-sound transmission
-- Dial-up modems - The OG audio data transmission
-- Amateur radio - Frequency modulation techniques
+- **Text Mode**: Inspired by [CHIRP](https://chirp.hex.dance/)
+- **Voice Mode**: Direct audio transmission (our innovation!)
+- **Combined**: Best of both worlds
 
-## 🌟 Star This Repo!
+---
 
-If you use this for your hackathon or find it helpful, please star the repo! ⭐
+## 🎉 The Magic
+
+**Text**: Complex frequency encoding ✨
+**Voice**: Simple audio playback 🎤
+**Together**: Impressive hackathon project! 🚀
+
+**Try it now and hear your EXACT voice transmitted through sound!**
 
 ---
 
 **Built with ❤️ for the hackathon community**
 
-**Questions?** Open an issue or reach out!
-
-**Good luck with your hackathon!** 🚀
+**Questions?** Open an issue!
+**Good luck!** 🚀

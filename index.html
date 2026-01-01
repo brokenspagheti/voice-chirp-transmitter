@@ -14,54 +14,93 @@
     </header>
 
     <main>
-      <!-- Mode Selection -->
-      <div class="mode-selector">
-        <button id="text-mode-btn" class="mode-btn active">📝 Text Mode</button>
-        <button id="voice-mode-btn" class="mode-btn">🎤 Voice Mode</button>
-      </div>
-
-      <!-- Text Mode -->
-      <div id="text-mode" class="mode-panel active">
-        <div class="input-section">
-          <h2>Text Input</h2>
-          <textarea id="text-input" placeholder="Type your message here..." rows="4"></textarea>
+      <!-- Combined Input Section -->
+      <div class="transmitter-section">
+        <h2>📡 Transmitter</h2>
+        
+        <!-- Text Input -->
+        <div class="input-group">
+          <label>📝 Text Message</label>
+          <textarea id="text-input" placeholder="Type your message here..." rows="3"></textarea>
           <button id="transmit-text-btn" class="primary-btn">📡 Transmit Text</button>
         </div>
-      </div>
 
-      <!-- Voice Mode -->
-      <div id="voice-mode" class="mode-panel">
-        <div class="input-section">
-          <h2>Voice Input</h2>
+        <!-- Voice Input -->
+        <div class="input-group">
+          <label>🎤 Voice Message</label>
           <div class="voice-controls">
             <button id="record-btn" class="record-btn">🎤 Record Voice (2s)</button>
             <div id="recording-status" class="status-text"></div>
           </div>
           <button id="transmit-voice-btn" class="primary-btn" disabled>📡 Transmit Voice</button>
         </div>
+
+        <!-- Transmission Status -->
+        <div id="transmission-status" class="status-box"></div>
       </div>
 
       <!-- Frequency Visualization -->
       <div class="visualization-section">
-        <h2>Frequency Analysis</h2>
+        <h2>📊 Frequency Analysis</h2>
         <canvas id="frequency-canvas" width="800" height="200"></canvas>
-        <div id="transmission-status" class="status-text"></div>
       </div>
 
       <!-- Receiver Section -->
       <div class="receiver-section">
-        <h2>Receiver</h2>
-        <button id="listen-btn" class="secondary-btn">👂 Start Listening</button>
-        <button id="stop-listen-btn" class="secondary-btn" disabled>⏹ Stop Listening</button>
+        <h2>👂 Receiver</h2>
         
-        <div class="received-data">
-          <h3>Received Messages</h3>
-          <div id="received-text" class="received-box">
-            <p class="placeholder">No messages received yet...</p>
+        <div class="receiver-controls">
+          <button id="listen-btn" class="secondary-btn">👂 Start Listening</button>
+          <button id="stop-listen-btn" class="secondary-btn" disabled>⏹ Stop Listening</button>
+          <div id="listening-status" class="status-text"></div>
+        </div>
+        
+        <div class="received-container">
+          <!-- Received Text -->
+          <div class="received-group">
+            <h3>📝 Received Text</h3>
+            <div id="received-text" class="received-box">
+              <p class="placeholder">No text messages received yet...</p>
+            </div>
           </div>
-          
-          <div id="received-voice" class="received-box" style="display: none;">
-            <button id="play-voice-btn" class="secondary-btn" disabled>🔊 Play Received Voice</button>
+
+          <!-- Received Voice -->
+          <div class="received-group">
+            <h3>🎤 Received Voice</h3>
+            <div id="received-voice" class="received-box">
+              <p class="placeholder">No voice messages received yet...</p>
+              <div id="voice-playback" style="display: none;">
+                <button id="play-voice-btn" class="play-btn">▶ Play Voice</button>
+                <div id="playback-status" class="status-text"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Instructions -->
+      <div class="instructions-section">
+        <h2>📖 How to Use</h2>
+        <div class="instructions-grid">
+          <div class="instruction-card">
+            <div class="instruction-icon">📝</div>
+            <h3>Text Mode</h3>
+            <p>Type a message and click "Transmit Text" to send it as audio frequencies</p>
+          </div>
+          <div class="instruction-card">
+            <div class="instruction-icon">🎤</div>
+            <h3>Voice Mode</h3>
+            <p>Click "Record Voice", speak for 2 seconds, then click "Transmit Voice"</p>
+          </div>
+          <div class="instruction-card">
+            <div class="instruction-icon">👂</div>
+            <h3>Receive</h3>
+            <p>Click "Start Listening" to decode incoming transmissions from speakers</p>
+          </div>
+          <div class="instruction-card">
+            <div class="instruction-icon">🔊</div>
+            <h3>Playback</h3>
+            <p>Received voice messages can be played back using the Play button</p>
           </div>
         </div>
       </div>

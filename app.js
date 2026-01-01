@@ -5,8 +5,8 @@ class AudioTransmitter {
     this.analyser = null;
     this.isListening = false;
     this.isTransmitting = false;
-    this.currentMode = 'text'; // 'text' or 'voice'
     this.recordedAudio = null;
+    this.receivedVoiceData = null;
     this.mediaRecorder = null;
     this.audioChunks = [];
     
@@ -18,6 +18,12 @@ class AudioTransmitter {
     // Signatures
     this.startSignature = [2000, 2500, 3000]; // Start transmission
     this.endSignature = [3000, 2500, 2000];   // End transmission
+    this.voiceMarker = [4000, 4500, 5000];    // Voice data marker
+    
+    // Reception
+    this.receivedTextData = [];
+    this.receivedVoiceChunks = [];
+    this.isReceivingVoice = false;
     
     this.init();
   }
@@ -29,10 +35,6 @@ class AudioTransmitter {
   }
 
   setupEventListeners() {
-    // Mode switching
-    document.getElementById('text-mode-btn').addEventListener('click', () => this.switchMode('text'));
-    document.getElementById('voice-mode-btn').addEventListener('click', () => this.switchMode('voice'));
-    
     // Text mode
     document.getElementById('transmit-text-btn').addEventListener('click', () => this.transmitText());
     
@@ -51,6 +53,7 @@ class AudioTransmitter {
     this.canvasCtx = this.canvas.getContext('2d');
     this.canvas.width = 800;
     this.canvas.height = 200;
+    this.drawIdleVisualization();
   }
 
   initAudioContext() {
@@ -59,51 +62,41 @@ class AudioTransmitter {
     this.analyser.fftSize = 2048;
   }
 
-  switchMode(mode) {
-    this.currentMode = mode;
-    
-    // Update UI
-    document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
-    document.querySelectorAll('.mode-panel').forEach(panel => panel.classList.remove('active'));
-    
-    if (mode === 'text') {
-      document.getElementById('text-mode-btn').classList.add('active');
-      document.getElementById('text-mode').classList.add('active');
-    } else {
-      document.getElementById('voice-mode-btn').classList.add('active');
-      document.getElementById('voice-mode').classList.add('active');
-    }
-  }
-
   // TEXT MODE FUNCTIONS
   async transmitText() {
     const text = document.getElementById('text-input').value.trim();
     
     if (!text) {
-      this.showStatus('Please enter some text to transmit', 'error');
+      this.showTransmissionStatus('Please enter some text to transmit', 'error');
       return;
     }
 
     this.isTransmitting = true;
-    this.showStatus('Transmitting text...', 'active');
+    this.showTransmissionStatus('Transmitting text...', 'active');
     
     try {
       // Play start signature
       await this.playSignature(this.startSignature);
       
       // Convert text to frequencies and play
-      for (let char of text) {
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
         const freq = this.charToFrequency(char);
         await this.playTone(freq, this.toneDuration);
         this.visualizeFrequency(freq);
+        
+        // Update progress
+        const progress = Math.round(((i + 1) / text.length) * 100);
+        this.showTransmissionStatus(`Transmitting text... ${progress}%`, 'active');
       }
       
       // Play end signature
       await this.playSignature(this.endSignature);
       
-      this.showStatus('Text transmission complete!', 'active');
+      this.showTransmissionStatus('✅ Text transmission complete!', 'active');
+      setTimeout(() => this.showTransmissionStatus('', ''), 3000);
     } catch (error) {
-      this.showStatus('Transmission failed: ' + error.message, 'error');
+      this.showTransmissionStatus('❌ Transmission failed: ' + error.message, 'error');
     } finally {
       this.isTransmitting = false;
     }
@@ -168,7 +161,7 @@ class AudioTransmitter {
         const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
         this.recordedAudio = audioBlob;
         
-        statusDiv.textContent = 'Recording complete! Ready to transmit.';
+        statusDiv.textContent = '✅ Recording complete! Ready to transmit.';
         statusDiv.classList.add('active');
         transmitBtn.disabled = false;
         recordBtn.classList.remove('recording');
@@ -192,7 +185,7 @@ class AudioTransmitter {
       }, 2000);
       
     } catch (error) {
-      statusDiv.textContent = 'Microphone access denied!';
+      statusDiv.textContent = '❌ Microphone access denied!';
       statusDiv.classList.add('error');
       console.error('Error accessing microphone:', error);
     }
@@ -200,43 +193,45 @@ class AudioTransmitter {
 
   async transmitVoice() {
     if (!this.recordedAudio) {
-      this.showStatus('Please record audio first!', 'error');
+      this.showTransmissionStatus('Please record audio first!', 'error');
       return;
     }
 
     this.isTransmitting = true;
-    this.showStatus('Transmitting voice... (this is a demo)', 'active');
+    this.showTransmissionStatus('Transmitting voice...', 'active');
     
     try {
       // Convert audio blob to array buffer
       const arrayBuffer = await this.recordedAudio.arrayBuffer();
       const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
       
-      // Downsample and encode (simplified for demo)
+      // Downsample and encode
       const samples = this.downsampleAudio(audioBuffer, 8000);
       
-      // Play start signature
-      await this.playSignature(this.startSignature);
+      // Play voice marker
+      await this.playSignature(this.voiceMarker);
       
-      // Transmit audio samples as frequencies (demo - first 100 samples)
-      const sampleCount = Math.min(samples.length, 100);
+      // Transmit audio samples as frequencies (first 200 samples for demo)
+      const sampleCount = Math.min(samples.length, 200);
       for (let i = 0; i < sampleCount; i++) {
         const sample = samples[i];
         const freq = this.sampleToFrequency(sample);
         await this.playTone(freq, 0.02);
         this.visualizeFrequency(freq);
         
-        if (i % 10 === 0) {
-          this.showStatus(`Transmitting... ${Math.round((i/sampleCount)*100)}%`, 'active');
+        if (i % 20 === 0) {
+          const progress = Math.round((i/sampleCount)*100);
+          this.showTransmissionStatus(`Transmitting voice... ${progress}%`, 'active');
         }
       }
       
       // Play end signature
       await this.playSignature(this.endSignature);
       
-      this.showStatus('Voice transmission complete!', 'active');
+      this.showTransmissionStatus('✅ Voice transmission complete!', 'active');
+      setTimeout(() => this.showTransmissionStatus('', ''), 3000);
     } catch (error) {
-      this.showStatus('Transmission failed: ' + error.message, 'error');
+      this.showTransmissionStatus('❌ Transmission failed: ' + error.message, 'error');
       console.error('Transmission error:', error);
     } finally {
       this.isTransmitting = false;
@@ -265,6 +260,12 @@ class AudioTransmitter {
     return this.baseFreq + (value * 20); // Map to frequency range
   }
 
+  frequencyToSample(freq) {
+    const value = (freq - this.baseFreq) / 20;
+    const normalized = value / 255;
+    return (normalized * 2) - 1; // Back to -1 to 1
+  }
+
   // RECEIVER FUNCTIONS
   async startListening() {
     try {
@@ -274,16 +275,18 @@ class AudioTransmitter {
       source.connect(this.analyser);
       
       this.isListening = true;
-      this.receivedData = [];
+      this.receivedTextData = [];
+      this.receivedVoiceChunks = [];
+      this.isReceivingVoice = false;
       
       document.getElementById('listen-btn').disabled = true;
       document.getElementById('stop-listen-btn').disabled = false;
       
-      this.showStatus('Listening for transmissions...', 'active');
+      this.showListeningStatus('👂 Listening for transmissions...', 'active');
       this.detectFrequencies();
       
     } catch (error) {
-      this.showStatus('Microphone access denied!', 'error');
+      this.showListeningStatus('❌ Microphone access denied!', 'error');
       console.error('Error accessing microphone:', error);
     }
   }
@@ -294,11 +297,15 @@ class AudioTransmitter {
     document.getElementById('listen-btn').disabled = false;
     document.getElementById('stop-listen-btn').disabled = true;
     
-    this.showStatus('Stopped listening', '');
+    this.showListeningStatus('⏹ Stopped listening', '');
     
     // Process received data
-    if (this.receivedData && this.receivedData.length > 0) {
-      this.displayReceivedText(this.receivedData.join(''));
+    if (this.receivedTextData.length > 0) {
+      this.displayReceivedText(this.receivedTextData.join(''));
+    }
+    
+    if (this.receivedVoiceChunks.length > 0) {
+      this.displayReceivedVoice();
     }
   }
 
@@ -314,11 +321,27 @@ class AudioTransmitter {
     const dominantFreq = this.getDominantFrequency(dataArray);
     
     if (dominantFreq > 0) {
-      // Try to decode as character
-      if (dominantFreq >= this.baseFreq && dominantFreq < this.baseFreq + (256 * this.freqStep)) {
-        const char = this.frequencyToChar(dominantFreq);
-        if (char && char.charCodeAt(0) >= 32 && char.charCodeAt(0) <= 126) {
-          this.receivedData.push(char);
+      // Check for voice marker
+      if (this.isNearFrequency(dominantFreq, 4000, 100)) {
+        this.isReceivingVoice = true;
+        this.showListeningStatus('🎤 Receiving voice data...', 'active');
+      }
+      
+      // Decode based on mode
+      if (this.isReceivingVoice) {
+        // Voice data
+        if (dominantFreq >= this.baseFreq && dominantFreq < this.baseFreq + (256 * 20)) {
+          const sample = this.frequencyToSample(dominantFreq);
+          this.receivedVoiceChunks.push(sample);
+        }
+      } else {
+        // Text data
+        if (dominantFreq >= this.baseFreq && dominantFreq < this.baseFreq + (256 * this.freqStep)) {
+          const char = this.frequencyToChar(dominantFreq);
+          if (char && char.charCodeAt(0) >= 32 && char.charCodeAt(0) <= 126) {
+            this.receivedTextData.push(char);
+            this.showListeningStatus(`📝 Receiving text... (${this.receivedTextData.length} chars)`, 'active');
+          }
         }
       }
       
@@ -326,6 +349,10 @@ class AudioTransmitter {
     }
     
     requestAnimationFrame(() => this.detectFrequencies());
+  }
+
+  isNearFrequency(freq, target, tolerance) {
+    return Math.abs(freq - target) < tolerance;
   }
 
   getDominantFrequency(dataArray) {
@@ -358,9 +385,56 @@ class AudioTransmitter {
     receivedDiv.appendChild(messageDiv);
   }
 
-  playReceivedVoice() {
-    // Placeholder for voice playback
-    this.showStatus('Voice playback not yet implemented', 'error');
+  displayReceivedVoice() {
+    const receivedDiv = document.getElementById('received-voice');
+    const playbackDiv = document.getElementById('voice-playback');
+    const playBtn = document.getElementById('play-voice-btn');
+    
+    receivedDiv.querySelector('.placeholder').style.display = 'none';
+    playbackDiv.style.display = 'block';
+    playBtn.disabled = false;
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message';
+    messageDiv.textContent = `✅ Voice message received (${this.receivedVoiceChunks.length} samples)`;
+    
+    receivedDiv.insertBefore(messageDiv, playbackDiv);
+  }
+
+  async playReceivedVoice() {
+    if (this.receivedVoiceChunks.length === 0) {
+      this.showPlaybackStatus('❌ No voice data to play', 'error');
+      return;
+    }
+
+    try {
+      this.showPlaybackStatus('▶ Playing...', 'active');
+      
+      // Create audio buffer from received samples
+      const sampleRate = 8000;
+      const buffer = this.audioContext.createBuffer(1, this.receivedVoiceChunks.length, sampleRate);
+      const channelData = buffer.getChannelData(0);
+      
+      for (let i = 0; i < this.receivedVoiceChunks.length; i++) {
+        channelData[i] = this.receivedVoiceChunks[i];
+      }
+      
+      // Play the buffer
+      const source = this.audioContext.createBufferSource();
+      source.buffer = buffer;
+      source.connect(this.audioContext.destination);
+      
+      source.onended = () => {
+        this.showPlaybackStatus('✅ Playback complete', 'active');
+        setTimeout(() => this.showPlaybackStatus('', ''), 2000);
+      };
+      
+      source.start();
+      
+    } catch (error) {
+      this.showPlaybackStatus('❌ Playback failed: ' + error.message, 'error');
+      console.error('Playback error:', error);
+    }
   }
 
   // VISUALIZATION
@@ -390,8 +464,42 @@ class AudioTransmitter {
     ctx.fillText(`${Math.round(frequency)} Hz`, width / 2, 30);
   }
 
-  showStatus(message, type = '') {
+  drawIdleVisualization() {
+    const ctx = this.canvasCtx;
+    const width = this.canvas.width;
+    const height = this.canvas.height;
+    
+    ctx.fillStyle = '#2a2a2a';
+    ctx.fillRect(0, 0, width, height);
+    
+    ctx.fillStyle = '#666';
+    ctx.font = '14px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('Waiting for transmission...', width / 2, height / 2);
+  }
+
+  showTransmissionStatus(message, type = '') {
     const statusDiv = document.getElementById('transmission-status');
+    statusDiv.textContent = message;
+    statusDiv.className = 'status-box';
+    
+    if (type) {
+      statusDiv.classList.add(type);
+    }
+  }
+
+  showListeningStatus(message, type = '') {
+    const statusDiv = document.getElementById('listening-status');
+    statusDiv.textContent = message;
+    statusDiv.className = 'status-text';
+    
+    if (type) {
+      statusDiv.classList.add(type);
+    }
+  }
+
+  showPlaybackStatus(message, type = '') {
+    const statusDiv = document.getElementById('playback-status');
     statusDiv.textContent = message;
     statusDiv.className = 'status-text';
     

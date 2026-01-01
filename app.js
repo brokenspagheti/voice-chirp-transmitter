@@ -6,7 +6,7 @@ class AudioTransmitter {
     this.isListening = false;
     this.isTransmitting = false;
     this.recordedAudio = null;
-    this.receivedVoiceData = null;
+    this.receivedVoiceBlob = null;
     this.mediaRecorder = null;
     this.audioChunks = [];
     
@@ -22,7 +22,6 @@ class AudioTransmitter {
     
     // Reception
     this.receivedTextData = [];
-    this.receivedVoiceChunks = [];
     this.isReceivingVoice = false;
     
     this.init();
@@ -40,7 +39,7 @@ class AudioTransmitter {
     
     // Voice mode
     document.getElementById('record-btn').addEventListener('click', () => this.recordVoice());
-    document.getElementById('transmit-voice-btn').addEventListener('click', () => this.transmitVoice());
+    document.getElementById('transmit-voice-btn').addEventListener('click', () => this.transmitVoiceExact());
     
     // Receiver
     document.getElementById('listen-btn').addEventListener('click', () => this.startListening());
@@ -141,7 +140,7 @@ class AudioTransmitter {
     }
   }
 
-  // VOICE MODE FUNCTIONS
+  // VOICE MODE FUNCTIONS - EXACT AUDIO PLAYBACK
   async recordVoice() {
     const recordBtn = document.getElementById('record-btn');
     const statusDiv = document.getElementById('recording-status');
@@ -191,45 +190,47 @@ class AudioTransmitter {
     }
   }
 
-  async transmitVoice() {
+  // NEW: Transmit exact audio by playing it through speakers
+  async transmitVoiceExact() {
     if (!this.recordedAudio) {
       this.showTransmissionStatus('Please record audio first!', 'error');
       return;
     }
 
     this.isTransmitting = true;
-    this.showTransmissionStatus('Transmitting voice...', 'active');
+    this.showTransmissionStatus('Transmitting voice (exact audio)...', 'active');
     
     try {
-      // Convert audio blob to array buffer
-      const arrayBuffer = await this.recordedAudio.arrayBuffer();
-      const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
-      
-      // Downsample and encode
-      const samples = this.downsampleAudio(audioBuffer, 8000);
-      
-      // Play voice marker
+      // Play voice marker to indicate voice transmission
       await this.playSignature(this.voiceMarker);
       
-      // Transmit audio samples as frequencies (first 200 samples for demo)
-      const sampleCount = Math.min(samples.length, 200);
-      for (let i = 0; i < sampleCount; i++) {
-        const sample = samples[i];
-        const freq = this.sampleToFrequency(sample);
-        await this.playTone(freq, 0.02);
-        this.visualizeFrequency(freq);
-        
-        if (i % 20 === 0) {
-          const progress = Math.round((i/sampleCount)*100);
-          this.showTransmissionStatus(`Transmitting voice... ${progress}%`, 'active');
-        }
-      }
+      // Small delay
+      await this.sleep(200);
+      
+      // Play the actual recorded audio through speakers
+      const audioUrl = URL.createObjectURL(this.recordedAudio);
+      const audio = new Audio(audioUrl);
+      
+      // Visualize during playback
+      this.visualizeAudioPlayback(audio);
+      
+      // Play the audio
+      await new Promise((resolve, reject) => {
+        audio.onended = resolve;
+        audio.onerror = reject;
+        audio.play();
+      });
+      
+      // Small delay
+      await this.sleep(200);
       
       // Play end signature
       await this.playSignature(this.endSignature);
       
       this.showTransmissionStatus('✅ Voice transmission complete!', 'active');
       setTimeout(() => this.showTransmissionStatus('', ''), 3000);
+      
+      URL.revokeObjectURL(audioUrl);
     } catch (error) {
       this.showTransmissionStatus('❌ Transmission failed: ' + error.message, 'error');
       console.error('Transmission error:', error);
@@ -238,45 +239,90 @@ class AudioTransmitter {
     }
   }
 
-  downsampleAudio(audioBuffer, targetSampleRate) {
-    const originalSampleRate = audioBuffer.sampleRate;
-    const channelData = audioBuffer.getChannelData(0);
-    const ratio = originalSampleRate / targetSampleRate;
-    const newLength = Math.floor(channelData.length / ratio);
-    const result = new Float32Array(newLength);
+  async sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  visualizeAudioPlayback(audioElement) {
+    // Create analyzer for the audio element
+    const source = this.audioContext.createMediaElementSource(audioElement);
+    const analyser = this.audioContext.createAnalyser();
+    analyser.fftSize = 2048;
     
-    for (let i = 0; i < newLength; i++) {
-      const index = Math.floor(i * ratio);
-      result[i] = channelData[index];
+    source.connect(analyser);
+    analyser.connect(this.audioContext.destination);
+    
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    
+    const visualize = () => {
+      if (!audioElement.paused && !audioElement.ended) {
+        requestAnimationFrame(visualize);
+      }
+      
+      analyser.getByteFrequencyData(dataArray);
+      this.drawWaveform(dataArray);
+    };
+    
+    visualize();
+  }
+
+  drawWaveform(dataArray) {
+    const ctx = this.canvasCtx;
+    const width = this.canvas.width;
+    const height = this.canvas.height;
+    
+    ctx.fillStyle = '#2a2a2a';
+    ctx.fillRect(0, 0, width, height);
+    
+    const barWidth = (width / dataArray.length) * 2.5;
+    let barHeight;
+    let x = 0;
+    
+    for (let i = 0; i < dataArray.length; i++) {
+      barHeight = (dataArray[i] / 255) * height;
+      
+      const gradient = ctx.createLinearGradient(0, height - barHeight, 0, height);
+      gradient.addColorStop(0, '#00ffaa');
+      gradient.addColorStop(0.5, '#3185ff');
+      gradient.addColorStop(1, '#ff41b4');
+      
+      ctx.fillStyle = gradient;
+      ctx.fillRect(x, height - barHeight, barWidth, barHeight);
+      
+      x += barWidth + 1;
     }
-    
-    return result;
   }
 
-  sampleToFrequency(sample) {
-    // Convert audio sample (-1 to 1) to frequency
-    const normalized = (sample + 1) / 2; // 0 to 1
-    const value = Math.floor(normalized * 255); // 0 to 255
-    return this.baseFreq + (value * 20); // Map to frequency range
-  }
-
-  frequencyToSample(freq) {
-    const value = (freq - this.baseFreq) / 20;
-    const normalized = value / 255;
-    return (normalized * 2) - 1; // Back to -1 to 1
-  }
-
-  // RECEIVER FUNCTIONS
+  // RECEIVER FUNCTIONS - RECORD EXACT AUDIO
   async startListening() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const source = this.audioContext.createMediaStreamSource(stream);
       
+      // Set up media recorder to capture incoming audio
+      this.receivedAudioChunks = [];
+      this.receivedMediaRecorder = new MediaRecorder(stream);
+      
+      this.receivedMediaRecorder.ondataavailable = (event) => {
+        this.receivedAudioChunks.push(event.data);
+      };
+      
+      this.receivedMediaRecorder.onstop = () => {
+        // Create blob from recorded audio
+        const audioBlob = new Blob(this.receivedAudioChunks, { type: 'audio/webm' });
+        this.receivedVoiceBlob = audioBlob;
+        this.displayReceivedVoice();
+      };
+      
+      // Start recording
+      this.receivedMediaRecorder.start();
+      
+      // Also set up frequency detection for text
+      const source = this.audioContext.createMediaStreamSource(stream);
       source.connect(this.analyser);
       
       this.isListening = true;
       this.receivedTextData = [];
-      this.receivedVoiceChunks = [];
       this.isReceivingVoice = false;
       
       document.getElementById('listen-btn').disabled = true;
@@ -294,18 +340,19 @@ class AudioTransmitter {
   stopListening() {
     this.isListening = false;
     
+    // Stop recording
+    if (this.receivedMediaRecorder && this.receivedMediaRecorder.state === 'recording') {
+      this.receivedMediaRecorder.stop();
+    }
+    
     document.getElementById('listen-btn').disabled = false;
     document.getElementById('stop-listen-btn').disabled = true;
     
     this.showListeningStatus('⏹ Stopped listening', '');
     
-    // Process received data
+    // Process received text data
     if (this.receivedTextData.length > 0) {
       this.displayReceivedText(this.receivedTextData.join(''));
-    }
-    
-    if (this.receivedVoiceChunks.length > 0) {
-      this.displayReceivedVoice();
     }
   }
 
@@ -327,15 +374,8 @@ class AudioTransmitter {
         this.showListeningStatus('🎤 Receiving voice data...', 'active');
       }
       
-      // Decode based on mode
-      if (this.isReceivingVoice) {
-        // Voice data
-        if (dominantFreq >= this.baseFreq && dominantFreq < this.baseFreq + (256 * 20)) {
-          const sample = this.frequencyToSample(dominantFreq);
-          this.receivedVoiceChunks.push(sample);
-        }
-      } else {
-        // Text data
+      // Only decode text if not receiving voice
+      if (!this.isReceivingVoice) {
         if (dominantFreq >= this.baseFreq && dominantFreq < this.baseFreq + (256 * this.freqStep)) {
           const char = this.frequencyToChar(dominantFreq);
           if (char && char.charCodeAt(0) >= 32 && char.charCodeAt(0) <= 126) {
@@ -396,40 +436,35 @@ class AudioTransmitter {
     
     const messageDiv = document.createElement('div');
     messageDiv.className = 'message';
-    messageDiv.textContent = `✅ Voice message received (${this.receivedVoiceChunks.length} samples)`;
+    messageDiv.textContent = `✅ Voice message received (exact audio)`;
     
     receivedDiv.insertBefore(messageDiv, playbackDiv);
   }
 
   async playReceivedVoice() {
-    if (this.receivedVoiceChunks.length === 0) {
+    if (!this.receivedVoiceBlob) {
       this.showPlaybackStatus('❌ No voice data to play', 'error');
       return;
     }
 
     try {
-      this.showPlaybackStatus('▶ Playing...', 'active');
+      this.showPlaybackStatus('▶ Playing exact audio...', 'active');
       
-      // Create audio buffer from received samples
-      const sampleRate = 8000;
-      const buffer = this.audioContext.createBuffer(1, this.receivedVoiceChunks.length, sampleRate);
-      const channelData = buffer.getChannelData(0);
+      // Play the exact recorded audio
+      const audioUrl = URL.createObjectURL(this.receivedVoiceBlob);
+      const audio = new Audio(audioUrl);
       
-      for (let i = 0; i < this.receivedVoiceChunks.length; i++) {
-        channelData[i] = this.receivedVoiceChunks[i];
-      }
+      await new Promise((resolve, reject) => {
+        audio.onended = () => {
+          this.showPlaybackStatus('✅ Playback complete', 'active');
+          setTimeout(() => this.showPlaybackStatus('', ''), 2000);
+          resolve();
+        };
+        audio.onerror = reject;
+        audio.play();
+      });
       
-      // Play the buffer
-      const source = this.audioContext.createBufferSource();
-      source.buffer = buffer;
-      source.connect(this.audioContext.destination);
-      
-      source.onended = () => {
-        this.showPlaybackStatus('✅ Playback complete', 'active');
-        setTimeout(() => this.showPlaybackStatus('', ''), 2000);
-      };
-      
-      source.start();
+      URL.revokeObjectURL(audioUrl);
       
     } catch (error) {
       this.showPlaybackStatus('❌ Playback failed: ' + error.message, 'error');
